@@ -1,12 +1,21 @@
 # Create testcases fast
 
+## Description
+
+- `inputs/` contains input files and the relevant python code
+  - `inputs/make_inputs_medium.py` and `inputs/make_inputs_large.py` are used to generate inputs
+  - The .txt files contain inputs which each testcase separated by a newline
+- `tests/` contains testcases with `.in` and `.out` files
+
+- `sol.c` is the solution file
+- `check_sol.py` will compile `sol.c` and run it against each testcase in tests/
+
 ## Usage
 
-- open `script.ipynb`, run the cells
 - write the relevant python code in `inputs/make_medium_inputs.py` and `inputs/make_large_inputs.py` to generate inputs
-- write the relevant python code in `checker_test.py` to verify if the inputs are in the correct format 
-- `inputs/` contains inputs and the relevant python code
-- `tests/` contains testcases wiht `.in` and `.out` files
+- write the relevant python code in `checker_test.py` to verify if the inputs are in the correct format
+
+- open `script.ipynb`, run the cells
 
 ## Files
 
