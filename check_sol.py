@@ -6,6 +6,9 @@ import argparse
 
 
 def check_outputs(code_file, tests_folder, compiler='gcc', flags=['-O2']):
+    print(f"Checking solution: {code_file}")
+    print(f"Using test cases from folder: {tests_folder}\n")
+
     verdict = "AC"
     max_execution_time = 0
     index = 1  # Initialize the index to 1
@@ -58,6 +61,7 @@ def check_outputs(code_file, tests_folder, compiler='gcc', flags=['-O2']):
     print(f"AC count: {AC_count}/{index - 1}")
     print(f"WA count: {index - 1 - AC_count}/{index - 1}")
     print(f"Max execution time: {max_execution_time:.3f}")
+    print("-"*50)
 
 
 def main():
