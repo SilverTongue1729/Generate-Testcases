@@ -1,7 +1,11 @@
 import os
+import resource
 import sys
 import subprocess
 
+def set_stack_limit():
+    stack_size = 256 * 1024 * 1024  
+    resource.setrlimit(resource.RLIMIT_STACK, (stack_size, stack_size))
 
 def create_test_files(input_file, output_folder, start_number=1):
     with open(input_file, 'r') as f:
@@ -33,8 +37,12 @@ def create_test_files(input_file, output_folder, start_number=1):
 
 def compile_and_run(code_file, input_path, output_path):
     subprocess.run(['gcc', code_file, '-o', 'solution'])
-    subprocess.run(['./solution'], stdin=open(input_path, 'r'),
-                   stdout=open(output_path, 'w'))
+    subprocess.run(
+        ['./solution'],
+        stdin=open(input_path, 'r'),
+        stdout=open(output_path, 'w'),
+        preexec_fn=set_stack_limit
+    )
     os.remove('solution')
 
 

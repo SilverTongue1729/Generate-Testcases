@@ -1,8 +1,14 @@
 import os
+import resource
 import sys
 import subprocess
 import time
 import argparse
+
+
+def set_stack_limit():
+    stack_size = 256 * 1024 * 1024  
+    resource.setrlimit(resource.RLIMIT_STACK, (stack_size, stack_size))
 
 
 def check_outputs(code_file, tests_folder, compiler='gcc', flags=['-O2']):
@@ -33,14 +39,19 @@ def check_outputs(code_file, tests_folder, compiler='gcc', flags=['-O2']):
 
             start_time = time.time()
             process = subprocess.Popen(
-                ['./solution'], stdin=open(input_path, 'r'), stdout=subprocess.PIPE)
+                ['./solution'],
+                stdin=open(input_path, 'r'),
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                preexec_fn=set_stack_limit
+            )
             actual_output, stderr = process.communicate()
             end_time = time.time()
 
             os.remove('solution')
 
             if process.returncode != 0:
-                print(f"{index:2:}: {input_file:20}: Error - {stderr.decode()}")
+                print(f"{index:2}: {input_file:20}: Error - {stderr.decode()}")
                 verdict = "WA"
                 continue
 
