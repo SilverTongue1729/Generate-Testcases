@@ -6,10 +6,10 @@ A repository to quickly generate and validate test cases for DSA-style programmi
 
 This repository provides Python scripts and a Jupyter Notebook to streamline the process of:
 
-- Generating test case inputs (including medium and large test cases)
-- Validating input formats
-- Creating test files (input/output pairs) from a combined input file
-- Checking solution outputs against these test cases
+- **Generating** test case inputs (including medium and large test cases)
+- **Validating** input formats
+- **Creating** test files (`.in`, `.out` pairs) from a combined input file
+- **Checking** solution outputs against these test cases
 
 ## Usage
 
