@@ -48,7 +48,7 @@ def compile_and_run(code_file, input_path, output_path):
 
 def main():
     if len(sys.argv) != 5:
-        print("Usage: python script.py sol.c input.txt ./tests start_number")
+        print("Usage: python testcase_generator.py sol.c input.txt ./tests start_number")
         return
 
     code_file = sys.argv[1]

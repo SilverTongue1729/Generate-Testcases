@@ -1,0 +1,17 @@
+# Compiled binaries (e.g., from sol.c)
+a.out
+
+# Python bytecode and cache
+__pycache__/
+*.pyc
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Optionally ignore auto-generated test files and packages
+tests/
+tests.zip
+
+# OS-specific files (optional)
+.DS_Store
+Thumbs.db
