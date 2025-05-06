@@ -36,7 +36,7 @@ def create_test_files(input_file, output_folder, start_number=1):
 
 
 def compile_and_run(code_file, input_path, output_path):
-    subprocess.run(['gcc', code_file, '-o', 'solution'])
+    subprocess.run(['g++', code_file, '-std=c++20', '-o', 'solution'])
     subprocess.run(
         ['./solution'],
         stdin=open(input_path, 'r'),
