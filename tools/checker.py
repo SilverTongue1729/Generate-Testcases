@@ -4,6 +4,8 @@ import sys
 import subprocess
 import time
 import argparse
+import re
+import tempfile
 
 
 def set_stack_limit():
@@ -27,13 +29,17 @@ def find_all_test_cases(tests_folder):
                     rel_input = os.path.relpath(input_path, tests_folder)
                     test_cases.append((input_path, output_path, rel_input))
     
-    # Sort test cases by relative input path for consistent ordering
-    return sorted(test_cases, key=lambda x: x[2])
+    def natural_key(item):
+        return [int(part) if part.isdigit() else part for part in re.split(r'(\d+)', item[2])]
+
+    return sorted(test_cases, key=natural_key)
 
 
-def check_outputs(code_file, tests_folder, compiler='gcc', flags=['-O2']):
+def check_outputs(code_file, tests_folder, compiler='gcc', flags=['-O2'], time_limit=None):
     print(f"Checking solution: {code_file}")
     print(f"Using test cases from folder: {tests_folder}\n")
+    if time_limit is not None:
+        print(f"Time limit per test: {time_limit:.3f}s\n")
 
     verdict = "AC"
     max_execution_time = 0
@@ -46,14 +52,21 @@ def check_outputs(code_file, tests_folder, compiler='gcc', flags=['-O2']):
         print(f"Error: No test cases found in {tests_folder}")
         return
     
-    # Compile the code once
-    compile_command = [compiler, code_file] + flags + ['-o', 'solution']
+    # Compile the code once. Use a unique binary so parallel checker runs do
+    # not overwrite each other.
+    fd, executable_path = tempfile.mkstemp(prefix='testcase_checker_solution_')
+    os.close(fd)
+    compile_command = [compiler, code_file] + flags + ['-o', executable_path]
     process = subprocess.Popen(compile_command, stderr=subprocess.PIPE)
     _, compile_error = process.communicate()
 
     if process.returncode != 0:
         print(f"Compilation error for {code_file}:")
         print(compile_error.decode())
+        try:
+            os.remove(executable_path)
+        except:
+            pass
         return
 
     for index, (input_path, output_path, rel_input) in enumerate(test_cases, 1):
@@ -61,16 +74,27 @@ def check_outputs(code_file, tests_folder, compiler='gcc', flags=['-O2']):
             with open(output_path, 'r') as f:
                 expected_output = f.read().strip()
                 
-            start_time = time.time()
-            process = subprocess.Popen(
-                ['./solution'],
-                stdin=open(input_path, 'r'),
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                preexec_fn=set_stack_limit
-            )
-            actual_output, stderr = process.communicate()
-            end_time = time.time()
+            with open(input_path, 'r') as in_f:
+                start_time = time.time()
+                process = subprocess.Popen(
+                    [executable_path],
+                    stdin=in_f,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    preexec_fn=set_stack_limit
+                )
+
+                try:
+                    actual_output, stderr = process.communicate(timeout=time_limit)
+                except subprocess.TimeoutExpired:
+                    process.kill()
+                    actual_output, stderr = process.communicate()
+                    end_time = time.time()
+                    print(f"{index:2}: {rel_input:40}: TLE, time: {end_time - start_time:.3f}")
+                    verdict = "WA"
+                    continue
+
+                end_time = time.time()
 
             if process.returncode != 0:
                 print(f"{index:2}: {rel_input:40}: Error - {stderr.decode()}")
@@ -93,7 +117,7 @@ def check_outputs(code_file, tests_folder, compiler='gcc', flags=['-O2']):
     
     # Clean up the compiled solution
     try:
-        os.remove('solution')
+        os.remove(executable_path)
     except:
         pass
 
@@ -116,6 +140,8 @@ def main():
                         help='Compiler to use (e.g., gcc)')
     parser.add_argument(
         '--flags', nargs='+', default=['-std=c++20'], help='Compiler flags as a list (e.g., --flags -O2 -Wall)')
+    parser.add_argument(
+        '--tl', type=float, default=None, help='Per-test time limit in seconds. Runs exceeding this are killed and marked TLE.')
 
     args = parser.parse_args()
 
@@ -123,6 +149,7 @@ def main():
     tests_folder = args.tests_folder
     compiler = args.compiler
     flags = args.flags
+    time_limit = args.tl
 
     # Verify whether code_file, tests_folder, and compiler exist
     if not os.path.exists(code_file):
@@ -133,7 +160,11 @@ def main():
         print(f"Error: The tests folder '{tests_folder}' does not exist.")
         return
 
-    check_outputs(code_file, tests_folder, compiler, flags)
+    if time_limit is not None and time_limit <= 0:
+        print("Error: --tl must be positive.")
+        return
+
+    check_outputs(code_file, tests_folder, compiler, flags, time_limit)
 
 
 if __name__ == "__main__":
