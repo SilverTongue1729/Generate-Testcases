@@ -7,6 +7,8 @@ import argparse
 import re
 import tempfile
 
+SOURCE_EXTENSIONS = {'.c', '.cc', '.cpp', '.cxx'}
+
 
 def set_stack_limit():
     stack_size = 256 * 1024 * 1024  
@@ -35,6 +37,20 @@ def find_all_test_cases(tests_folder):
     return sorted(test_cases, key=natural_key)
 
 
+def find_solution_files(path):
+    if os.path.isfile(path):
+        return [path]
+
+    solution_files = []
+    for root, dirs, files in os.walk(path):
+        dirs.sort()
+        for file in sorted(files):
+            if os.path.splitext(file)[1] in SOURCE_EXTENSIONS:
+                solution_files.append(os.path.join(root, file))
+
+    return solution_files
+
+
 def check_outputs(code_file, tests_folder, compiler='gcc', flags=['-O2'], time_limit=None):
     print(f"Checking solution: {code_file}")
     print(f"Using test cases from folder: {tests_folder}\n")
@@ -52,9 +68,7 @@ def check_outputs(code_file, tests_folder, compiler='gcc', flags=['-O2'], time_l
         print(f"Error: No test cases found in {tests_folder}")
         return
     
-    # Compile the code once. Use a unique binary so parallel checker runs do
-    # not overwrite each other.
-    fd, executable_path = tempfile.mkstemp(prefix='testcase_checker_solution_')
+    fd, executable_path = tempfile.mkstemp(prefix='sec_cq3_solution_')
     os.close(fd)
     compile_command = [compiler, code_file] + flags + ['-o', executable_path]
     process = subprocess.Popen(compile_command, stderr=subprocess.PIPE)
@@ -133,7 +147,7 @@ def check_outputs(code_file, tests_folder, compiler='gcc', flags=['-O2'], time_l
 def main():
     parser = argparse.ArgumentParser(description='Code Checker')
     parser.add_argument(
-        'code_file', help='Path to the code file (e.g., sol.c)')
+        'code_path', help='Path to a code file or a folder containing solution files')
     parser.add_argument(
         'tests_folder', help='Path to the folder containing test cases (e.g., ./tests)')
     parser.add_argument('compiler', nargs='?', default='g++',
@@ -145,26 +159,31 @@ def main():
 
     args = parser.parse_args()
 
-    code_file = args.code_file
+    code_path = args.code_path
     tests_folder = args.tests_folder
     compiler = args.compiler
     flags = args.flags
-    time_limit = args.tl
 
-    # Verify whether code_file, tests_folder, and compiler exist
-    if not os.path.exists(code_file):
-        print(f"Error: The code file '{code_file}' does not exist.")
+    # Verify whether code_path, tests_folder, and compiler exist
+    if not os.path.exists(code_path):
+        print(f"Error: The code path '{code_path}' does not exist.")
         return
 
     if not os.path.exists(tests_folder):
         print(f"Error: The tests folder '{tests_folder}' does not exist.")
         return
 
-    if time_limit is not None and time_limit <= 0:
+    if args.tl is not None and args.tl <= 0:
         print("Error: --tl must be positive.")
         return
 
-    check_outputs(code_file, tests_folder, compiler, flags, time_limit)
+    solution_files = find_solution_files(code_path)
+    if not solution_files:
+        print(f"Error: No solution files with extensions {sorted(SOURCE_EXTENSIONS)} found in '{code_path}'.")
+        return
+
+    for code_file in solution_files:
+        check_outputs(code_file, tests_folder, compiler, flags, args.tl)
 
 
 if __name__ == "__main__":
