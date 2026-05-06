@@ -1,0 +1,8 @@
+archive: tests.zip
+file: tests/{n}
+test_cases:
+- 1: 1
+- 2: 7
+- 3..11: 8
+- batch: 1..11
+  points: 20
